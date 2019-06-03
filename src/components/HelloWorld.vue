@@ -1,24 +1,38 @@
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-
+  <div class="selectRoom">
+    <h1>四目並べ</h1>
+    {{a}}{{b}}
     <a v-if="isAuth" @click="signOut" class="button">signOut</a>
     <a v-else @click="signIn" class="button">signIn</a>
-    {{data}}
+    <div v-for="(room,index) in data" :key="index" class="room">
+      <h2>{{index}}{{room.player.player1.name}}{{room.player.player2.name}}</h2>
+      <div @click="enterRoom(index,1)">player1</div>
+      <div @click="enterRoom(index,2)">player2</div>
+    </div>
   </div>
 </template>
 
 <script>
 import firebase from "firebase";
+import store from "@/store.js";
 
 export default {
   name: "HelloWorld",
   data() {
     return {
-      msg: "Welcome to Your Vue.js App",
+      msg: "",
       isAuth: false,
       data: null
     };
+  },
+  computed: {
+    playerNum: function() {},
+    a: function() {
+      return store.state.playerNum;
+    },
+    b: function() {
+      return store.state.roomName;
+    }
   },
   methods: {
     signIn: function() {
@@ -33,9 +47,17 @@ export default {
         .database()
         .ref("/room")
         .on("value", snapshot => {
-          console.log(snapshot);
           this.data = snapshot.val();
         });
+    },
+    enterRoom: function(_inRoomNum, _inPlayerNum) {
+      var payload = {
+        roomName: _inRoomNum,
+        playerNum: _inPlayerNum
+      };
+      store.commit("enterRoom", payload);
+      var url = "#/SelectRoom";
+      window.location.href = url;
     }
   },
   mounted: function() {
@@ -46,9 +68,20 @@ export default {
 </script>
 
 <style scoped>
+.selectRoom {
+  width: 300px;
+  height: auto;
+  background-color: aqua;
+}
+
 .button {
   width: 200px;
   height: 100px;
   background-color: aqua;
+}
+.room {
+  width: 200px;
+  height: 100px;
+  background-color: red;
 }
 </style>

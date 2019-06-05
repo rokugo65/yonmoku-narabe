@@ -5,8 +5,8 @@ Vue.use(Vuex)
 
 const store = new Vuex.Store({
   state: {
-    roomName: "sdfasdf",
-    playerNum: "asdfasdf"
+    roomName: "",
+    playerNum: ""
   },
   mutations: {
     enterRoom(state, payload) {

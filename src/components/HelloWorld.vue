@@ -1,18 +1,14 @@
 <template>
   <div class="selectRoom">
-    <h1>四目並べ</h1>
-    <a v-if="isAuth" @click="signOut" class="button">signOut</a>
-    <a v-else @click="signIn" class="button">signIn</a>
+    <img src="../assets/logo.png" width="803px">
     <div v-for="(room,index) in data" :key="index" class="room">
-      <h2>{{index}}</h2>
-      <div
-        v-show="nowUnixTime-room.player.player1.lastUpdate>30000"
-        @click="enterRoom(index,1)"
-      >player1</div>
-      <div
-        v-show="nowUnixTime-room.player.player2.lastUpdate>30000"
-        @click="enterRoom(index,2)"
-      >player2</div>
+      <div class="roomInfo">
+        <div>{{index}}</div>
+        <div>{{"入室者数:"+playerNum(room)}}</div>
+      </div>
+      <div class="roomButton">
+        <div v-show="playerNum(room)<2" @click="enterRoom(index,room)" class="button">入室</div>
+      </div>
     </div>
   </div>
 </template>
@@ -31,14 +27,11 @@ export default {
     };
   },
   computed: {
-    playerNum: function() {},
     nowUnixTime: function() {
       var date = new Date();
       return date.getTime();
     },
-    b: function() {
-      return store.state.roomName;
-    }
+    numEntryperson: function() {}
   },
   methods: {
     signIn: function() {
@@ -56,18 +49,39 @@ export default {
           this.data = snapshot.val();
         });
     },
-    enterRoom: async function(_inRoomNum, _inPlayerNum) {
-      var payload = {
-        roomName: _inRoomNum,
-        playerNum: _inPlayerNum
-      };
-      await store.commit("enterRoom", payload);
-      var url = "#/SelectRoom";
-      window.location.href = url;
+    playerNum: function(_inRoom) {
+      var playerNum = 0;
+      if (this.nowUnixTime - _inRoom.player.player1.lastUpdate < 20000) {
+        playerNum++;
+      }
+      if (this.nowUnixTime - _inRoom.player.player2.lastUpdate < 20000) {
+        playerNum++;
+      }
+      return playerNum;
+    },
+    enterRoom: async function(_inRoomNum, _inRoom) {
+      await this.loadRoom();
+      if (this.nowUnixTime - _inRoom.player.player1.lastUpdate > 20000) {
+        var payload = {
+          roomName: _inRoomNum,
+          playerNum: 1
+        };
+        await store.commit("enterRoom", payload);
+        var url = "#/SelectRoom";
+        window.location.href = url;
+      }
+      if (this.nowUnixTime - _inRoom.player.player2.lastUpdate > 20000) {
+        var payload = {
+          roomName: _inRoomNum,
+          playerNum: 2
+        };
+        await store.commit("enterRoom", payload);
+        var url = "#/SelectRoom";
+        window.location.href = url;
+      }
     }
   },
   mounted: function() {
-    firebase.auth().onAuthStateChanged(user => (this.isAuth = !!user));
     this.loadRoom();
   }
 };
@@ -75,19 +89,50 @@ export default {
 
 <style scoped>
 .selectRoom {
-  width: 300px;
+  width: 800px;
   height: auto;
-  background-color: aqua;
+  background-color: #eeeeee;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 0px 0px 30px 30px;
+  padding-bottom: 20px;
 }
 
 .button {
+  text-align: center;
+  line-height: 1.6em;
   width: 200px;
-  height: 100px;
-  background-color: aqua;
+  height: 50px;
+  color: #ffffff;
+  background-color: #ff2244;
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px -4px black;
+  font-size: 30px;
+  transition: 300ms all ease 0s;
 }
+.button:hover {
+  background-color: #ff6688;
+  box-shadow: 0px 0px 18px -4px black;
+}
+
 .room {
-  width: 200px;
+  border-radius: 20px;
+  width: 600px;
   height: 100px;
-  background-color: red;
+  background-color: #ffffff;
+  margin-bottom: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0px 0px 8px -4px black;
+}
+.roomInfo {
+  float: left;
+  padding-left: 10px;
+  font-size: 25px;
+}
+.roomButton {
+  margin-top: 25px;
+  margin-right: 25px;
+  float: right;
 }
 </style>

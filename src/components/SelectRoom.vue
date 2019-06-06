@@ -1,14 +1,8 @@
 <template>
   <div class="hello">
+    <img src="../assets/logo.png" width="803px">
+    <div class="roomName">{{roomName}}</div>
     <div v-if="activeSignal">
-      <div v-if="data.endGame">
-        プレイヤー{{data.winner}}の勝ちです
-        <div @click="resetBoard()">リセット</div>
-      </div>
-      <div v-else>
-        <div v-if="isMyTurn">あなたの番です</div>
-        <div v-else>あいての番です</div>
-      </div>
       <table>
         <tr v-for="(row,rowIndex) in data.board" :key="rowIndex">
           <td v-for="(col, colIndex) in row" v-if="col!=-1" :key="colIndex">
@@ -18,8 +12,30 @@
           </td>
         </tr>
       </table>
+      <div class="message">
+        <div v-if="canput">
+          <div v-if="data.endGame">
+            <div v-if="isMyTurn">あなたの負けです</div>
+            <div v-else>あなたの勝ちです</div>
+            <div @click="resetBoard()" class="replayButton">もう一度プレイする</div>
+          </div>
+          <div v-else>
+            <div v-if="isMyTurn">({{turnColor}})あなたの番です</div>
+            <div v-else>({{turnColor}})あいての番です</div>
+          </div>
+        </div>
+        <div v-else>
+          <div>引き分けです</div>
+          <div @click="resetBoard()" class="replayButton">もう一度プレイする</div>
+        </div>
+      </div>
     </div>
-    <div v-else>対戦相手を待っています</div>
+    <div v-else>
+      <div class="wait">
+        <img class="waitImage" src="../assets/wait.png" width="600px">
+        <br>対戦相手を待っています...
+      </div>
+    </div>
   </div>
 </template>
 
@@ -32,7 +48,6 @@ export default {
 
   data() {
     return {
-      msg: "SelectRoomaaaaa",
       roomName: "",
       isAuth: false,
       data: null,
@@ -45,6 +60,30 @@ export default {
     isMyTurn: function() {
       if (this.data.player["player" + this.playerNum].first == this.data.turn) {
         return true;
+      }
+      return false;
+    },
+    turnColorNum: function() {
+      if (this.data.turn) {
+        return 1;
+      } else {
+        return 2;
+      }
+    },
+    turnColor: function() {
+      if (this.data.turn) {
+        return "黒";
+      } else {
+        return "白";
+      }
+    },
+    canput: function() {
+      for (var y = 0; y < this.data["board"].length; y++) {
+        for (var x = 0; x < this.data["board"][y].length; x++) {
+          if (this.data["board"][y][x] == 0) {
+            return true;
+          }
+        }
       }
       return false;
     }
@@ -73,6 +112,7 @@ export default {
       this.data.endGame = false;
       this.roomRef.set(this.data);
     },
+
     isLineup: function(y, x, dy, dx, num) {
       var ary = [this.data.board[y][x]];
       while (this.data.board[y][x] != -1 && num != 1) {
@@ -105,7 +145,7 @@ export default {
         this.data.player["player" + this.playerNum].first == this.data.turn &&
         !this.data.endGame
       ) {
-        this.data.board[y][x] = this.playerNum;
+        this.data.board[y][x] = this.turnColorNum;
         if (this.checkEnd(y, x)) {
           this.data.endGame = true;
           this.data.winner = this.playerNum;
@@ -117,8 +157,8 @@ export default {
     isActiveSignal: function() {
       var date = new Date();
       if (
-        date.getTime() - this.data.player.player1.lastUpdate > 30000 ||
-        date.getTime() - this.data.player.player2.lastUpdate > 30000
+        date.getTime() - this.data.player.player1.lastUpdate > 20000 ||
+        date.getTime() - this.data.player.player2.lastUpdate > 20000
       ) {
         return false;
       }
@@ -127,12 +167,17 @@ export default {
   },
   created: async function() {
     firebase.auth().onAuthStateChanged(user => (this.isAuth = !!user));
-    this.roomName = store.state.roomName;
-    this.playerNum = store.state.playerNum;
+    this.roomName = await store.state.roomName;
+    this.playerNum = await store.state.playerNum;
 
-    this.roomRef = await firebase.database().ref("/room/" + this.roomName);
-    this.loadData();
-    this.resetBoard();
+    if (this.roomName != "") {
+      this.roomRef = await firebase.database().ref("/room/" + this.roomName);
+      this.loadData();
+      this.resetBoard();
+    } else {
+      var url = "#/";
+      window.location.href = url;
+    }
   },
   mounted: function() {
     var this_ = this;
@@ -141,12 +186,22 @@ export default {
       var date = new Date();
       this_.data.player["player" + this_.playerNum].lastUpdate = date.getTime();
       this_.roomRef.set(this_.data);
-    }, 5000);
+    }, 1000);
   }
 };
 </script>
 
 <style scoped>
+.hello {
+  width: 800px;
+  height: auto;
+  background-color: #eeeeee;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 0px 0px 30px 30px;
+  padding-bottom: 20px;
+}
+
 .button {
   width: 200px;
   height: 100px;
@@ -156,6 +211,10 @@ export default {
 table {
   border-collapse: collapse;
   background-color: #eeaa44;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 td {
   border: solid 5px;
@@ -183,5 +242,45 @@ td {
 .blank {
   width: 50px;
   height: 50px;
+}
+.wait {
+  text-align: center;
+  font-size: 20px;
+}
+
+.waitImage {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.message {
+  text-align: center;
+  font-size: 30px;
+}
+
+.replayButton {
+  line-height: 2.3em;
+  font-size: 20px;
+  color: #ffffff;
+  width: 250px;
+  height: 50px;
+  border-radius: 15px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  background-color: #ff2244;
+  box-shadow: 0px 0px 10px -4px black;
+  transition: 300ms all ease 0s;
+}
+
+.replayButton:hover {
+  background-color: #ff6688;
+  box-shadow: 0px 0px 18px -4px black;
+}
+
+.roomName {
+  font-size: 20px;
+  margin-left: 20px;
 }
 </style>

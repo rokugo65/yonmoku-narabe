@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import HelloWorld from '@/components/HelloWorld'
-import SelectRoom from '@/components/SelectRoom'
+import Top from '@/components/Top'
+import Room from '@/components/Room'
 
 Vue.use(Router)
 
@@ -9,13 +9,13 @@ export default new Router({
   routes: [
     {
       path: '/',
-      name: 'HelloWorld',
-      component: HelloWorld
+      name: 'Top',
+      component: Top
     },
     {
-      path: '/SelectRoom',
-      name: 'SelectRoom',
-      component: SelectRoom
+      path: '/Room',
+      name: 'Room',
+      component: Room
     },
   ]
 })
